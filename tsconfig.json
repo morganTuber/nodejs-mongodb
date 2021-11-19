@@ -1,0 +1,58 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6"
+    ],
+    "outDir": "build",
+    "rootDir": "src",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "declaration": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "stripInternal": true,
+    "pretty": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "downlevelIteration": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "baseUrl": ".",
+    "resolveJsonModule": true,
+    "paths": {
+      "~models/*": [
+        "src/models/*"
+      ],
+      "~controllers/*": [
+        "src/controllers/*"
+      ],
+      "~typings/*": [
+        "src/typings/*"
+      ],
+      "~middlewares/*": [
+        "src/middlewares/*"
+      ],
+      "~utils/*": [
+        "src/utils/*"
+      ],
+    },
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "tmp",
+    "temp",
+    "build",
+    "node_modules"
+  ]
+}

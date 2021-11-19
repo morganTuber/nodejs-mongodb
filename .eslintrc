@@ -1,0 +1,38 @@
+{
+	"root": true,
+	"parser": "@typescript-eslint/parser",
+	"plugins": [
+		"@typescript-eslint",
+		"simple-import-sort"
+	],
+	"parserOptions": {
+		"project": [
+			"./tsconfig.json"
+		],
+		"ecmaVersion": 2020
+	},
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/recommended"
+	],
+	"rules": {
+		"simple-import-sort/imports": "error",
+		"simple-import-sort/exports": "error",
+		"no-console": [
+			"warn",
+			{
+				"allow": [
+					"info",
+					"warn"
+				]
+			}
+		],
+		"no-unused-vars": "off",
+		"@typescript-eslint/no-unused-vars": [
+			"error",
+			{
+				"argsIgnorePattern": "req|res|next|^_"
+			}
+		]
+	}
+}

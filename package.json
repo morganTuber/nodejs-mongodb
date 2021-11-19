@@ -1,0 +1,57 @@
+{
+	"name": "natours",
+	"version": "1.0.0",
+	"author": "morganTuber",
+	"license": "MIT",
+	"main": "build/build.js",
+	"dependencies": {
+		"@typegoose/typegoose": "^9.1.0",
+		"bcryptjs": "^2.4.3",
+		"cors": "^2.8.5",
+		"dotenv": "^10.0.0",
+		"express": "^4.17.1",
+		"express-mongo-sanitize": "^2.1.0",
+		"express-rate-limit": "^5.5.0",
+		"helmet": "^4.6.0",
+		"hpp": "^0.2.3",
+		"jsonwebtoken": "^8.5.1",
+		"lodash": "^4.17.21",
+		"mongoose": "^6.0.11",
+		"morgan": "^1.10.0",
+		"nodemailer": "^6.7.0",
+		"xss-clean": "^0.1.1"
+	},
+	"devDependencies": {
+		"@types/bcryptjs": "^2.4.2",
+		"@types/cors": "^2.8.12",
+		"@types/express": "^4.17.13",
+		"@types/express-rate-limit": "^5.1.3",
+		"@types/hpp": "^0.2.2",
+		"@types/jsonwebtoken": "^8.5.5",
+		"@types/lodash": "^4.14.175",
+		"@types/morgan": "^1.9.3",
+		"@types/node": "16.10.3",
+		"@types/nodemailer": "^6.4.4",
+		"@typescript-eslint/eslint-plugin": "4.33.0",
+		"@typescript-eslint/parser": "4.33.0",
+		"eslint": "^7.32.0",
+		"eslint-plugin-simple-import-sort": "^7.0.0",
+		"ts-loader": "^9.2.6",
+		"ts-node-dev": "^1.1.8",
+		"tsconfig-paths": "^3.11.0",
+		"tsconfig-paths-webpack-plugin": "^3.5.1",
+		"typescript": "^4.4.3",
+		"webpack": "^5.58.2",
+		"webpack-cli": "^4.9.0",
+		"webpack-node-externals": "^3.0.0"
+	},
+	"engines": {
+		"node": ">=14.17.6"
+	},
+	"scripts": {
+		"tsnode": "npx ts-node -r tsconfig-paths/register",
+		"dev": "ts-node-dev --respawn -r tsconfig-paths/register src/index.ts",
+		"start": "NODE_ENV=production nodemon build/index.js",
+		"build": "webpack"
+	}
+}
