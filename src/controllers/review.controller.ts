@@ -1,4 +1,11 @@
-import { deleteDocument } from '~controllers/factory.handler'
+import { NextFunction, Response } from 'express'
+
+import {
+	createDocument,
+	deleteDocument,
+	getOneDocument,
+	updateDocument,
+} from '~controllers/factory.handler'
 import { ReviewModel } from '~models/review.model'
 import { WithUserReq } from '~typings/withUserReq'
 import { catchAsync } from '~utils/catchAsync'
@@ -19,19 +26,21 @@ export const getAllReviews = catchAsync(async (req, res, _next) => {
 		},
 	})
 })
-export const createReview = catchAsync(async (req: WithUserReq, res, _next) => {
+
+// middleware for createDocument controller
+export const setTourUserIds = (
+	req: WithUserReq,
+	res: Response,
+	next: NextFunction
+): void => {
 	if (req.user) {
 		!req.body.tour && (req.body.tour = req.params.tourId)
 		!req.body.user && (req.body.user = req.user._id)
 	}
-	const review = await ReviewModel.create(req.body)
-	sendResponse({
-		res,
-		status: 'Success',
-		message: 'Successfully created a new review',
-		data: {
-			review,
-		},
-	})
-})
+	next()
+}
+
+export const getOneReview = getOneDocument(ReviewModel)
+export const createReview = createDocument(ReviewModel)
 export const deleteReview = deleteDocument(ReviewModel)
+export const updateReview = updateDocument(ReviewModel)

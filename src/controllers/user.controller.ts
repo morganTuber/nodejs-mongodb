@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { deleteDocument } from '~controllers/factory.handler'
+import { NextFunction, Response } from 'express'
+
+import {
+	deleteDocument,
+	getAllDocuments,
+	getOneDocument,
+} from '~controllers/factory.handler'
 import { UserModel } from '~models/user.model'
 import { HttpStatus } from '~typings/http-status.enum'
 import { IUser } from '~typings/user.interface'
@@ -9,18 +15,6 @@ import { CustomError } from '~utils/customError'
 import { sendResponse } from '~utils/sendResponse'
 
 type UpdateUserDto = Partial<Pick<IUser, 'name' | 'email' | 'photo'>>
-
-export const getAllUsers = catchAsync(async (req, res, next) => {
-	const users = await UserModel.find().select('-password')
-	sendResponse({
-		res,
-		status: 'Success',
-		results: users.length,
-		data: {
-			users,
-		},
-	})
-})
 
 export const updateUserProfile = catchAsync(async (req: WithUserReq, res, _next) => {
 	const { name, email, photo } = req.body as UpdateUserDto
@@ -46,4 +40,12 @@ export const updateUserProfile = catchAsync(async (req: WithUserReq, res, _next)
 		throw new CustomError(error, HttpStatus.UNAUTHORIZED)
 	}
 })
+
+//middleware to put user id in req.params
+export const getMe = (req: WithUserReq, res: Response, next: NextFunction): void => {
+	req.user && (req.params.id = req.user.id)
+	next()
+}
+export const getOneUser = getOneDocument(UserModel)
+export const getAllUsers = getAllDocuments(UserModel)
 export const deleteUser = deleteDocument(UserModel)

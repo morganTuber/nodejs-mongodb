@@ -10,6 +10,8 @@ import {
 import {
 	deleteUser,
 	getAllUsers,
+	getMe,
+	getOneUser,
 	updateUserProfile,
 } from '~controllers/user.controller'
 import { authenticated } from '~middlewares/authenticated'
@@ -19,8 +21,8 @@ import { Role } from '~typings/role.enum'
 const userRouter = Router()
 
 //user routes
-// userRouter.get('/', getAllUsers)
 userRouter.get('/', authenticated, restrictTo(Role.admin, Role.guide), getAllUsers)
+userRouter.get('/:id', authenticated, getMe, getOneUser)
 userRouter.post('/signup', signup)
 userRouter.post('/login', login)
 userRouter.delete(
@@ -33,8 +35,5 @@ userRouter.post('/forgotPassword', forgotPassword)
 userRouter.post('/changePassword', authenticated, changePassword)
 userRouter.post('/resetPassword/:resetToken', resetPassword)
 userRouter.patch('/update-profile', authenticated, updateUserProfile)
-// userRouter.get('/:id', getUserById)
-// userRouter.patch('/:id', updateUser)
-// userRouter.delete('/:id', deleteUser)
 
 export default userRouter

@@ -2,15 +2,14 @@ import { Response } from 'express'
 
 import { HttpStatus } from '~typings/http-status.enum'
 
+type Data = Record<string, unknown> | unknown
 interface ResponseValue {
 	res: Response
 	status?: 'Success' | 'Fail'
 	statusCode?: HttpStatus
 	message?: string
 	results?: number
-	data?: {
-		[key: string]: unknown
-	}
+	data?: Data
 }
 
 /** A fully typed function to send response to the client */
