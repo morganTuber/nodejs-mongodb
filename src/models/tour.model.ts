@@ -66,20 +66,20 @@ export class Tour implements Omit<ITour, 'id'> {
 	@prop({ required: [true, 'A tour must have a cover photo'] })
 	public imageCover: string
 
-	@prop({ type: String })
-	public images: mongoose.Types.Array<string>
+	@prop({ type: () => [String] })
+	public images: string[]
 
 	@prop({ default: Date.now() })
 	public createdAt: Date
 
-	@prop({ type: String })
-	public startDates: mongoose.Types.Array<string>
+	@prop({ type: [String] })
+	public startDates: string[]
 
-	@prop({ ref: () => StartLocation })
-	public startLocation: Ref<StartLocation>
+	@prop({ type: () => StartLocation })
+	public startLocation: StartLocation
 
-	@prop({ ref: () => Location })
-	public locations: Ref<Location>[]
+	@prop({ type: () => [Location] })
+	public locations: Location[]
 
 	@prop({ ref: 'User' })
 	public guides: mongoose.Schema.Types.ObjectId[]
@@ -118,5 +118,4 @@ class StartLocation {
 	@prop()
 	public description: string
 }
-
 export const TourModel = getModelForClass(Tour)

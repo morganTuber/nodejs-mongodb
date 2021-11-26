@@ -1,3 +1,4 @@
+import { deleteDocument } from '~controllers/factory.handler'
 import { ReviewModel } from '~models/review.model'
 import { WithUserReq } from '~typings/withUserReq'
 import { catchAsync } from '~utils/catchAsync'
@@ -33,3 +34,4 @@ export const createReview = catchAsync(async (req: WithUserReq, res, _next) => {
 		},
 	})
 })
+export const deleteReview = deleteDocument(ReviewModel)
