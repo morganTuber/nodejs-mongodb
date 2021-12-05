@@ -5,9 +5,10 @@ import mongoSanitize from 'express-mongo-sanitize'
 import expressRateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import hpp from 'hpp'
-import { connect, set } from 'mongoose'
+import { connect } from 'mongoose'
 import morgan from 'morgan'
 import reviewRouter from 'src/routes/review.routes'
+import viewsRouter from 'src/routes/view.routes'
 import xssClean from 'xss-clean'
 
 import { globalErrors } from '~middlewares/globalErrors'
@@ -20,16 +21,16 @@ import userRouter from './routes/user.route'
 dotenv.config({ path: `${process.cwd()}/config.env` })
 
 const PORT = process.env.PORT || 4000
-set('debug', true)
+
 //db credentials
-const DB_URL = getEnv('DATABASE_URL').replace(
-	'<PASSWORD>',
-	getEnv('DATABASE_PASSWORD')
-)
+const DB_URL = getEnv('DATABASE_URL').replace('<PASSWORD>', getEnv('DATABASE_PASSWORD'))
 
 //express app instance
 const app = express()
 
+//set the templating engine
+app.set('view engine', 'pug')
+app.set('views', `${process.cwd()}/src/views`)
 //connect to the mongodb database
 connect(DB_URL, { autoIndex: true }, result => {
 	if (result) return console.log(result.message)
@@ -52,13 +53,7 @@ app.use(xssClean())
 //middleware to prevent parameter pollution
 app.use(
 	hpp({
-		whitelist: [
-			'duration',
-			'ratingsQuantity',
-			'ratingsAverage',
-			'difficulty',
-			'price',
-		],
+		whitelist: ['duration', 'ratingsQuantity', 'ratingsAverage', 'difficulty', 'price'],
 	})
 )
 app.use(express.static(`${process.cwd()}/public`))
@@ -73,6 +68,8 @@ app.use(
 )
 
 //register routes
+//view routes
+app.use('/', viewsRouter)
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/reviews', reviewRouter)

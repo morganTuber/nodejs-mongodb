@@ -43,7 +43,7 @@ export const updateUserProfile = catchAsync(async (req: WithUserReq, res, _next)
 
 //middleware to put user id in req.params
 export const getMe = (req: WithUserReq, res: Response, next: NextFunction): void => {
-	req.user && (req.params.id = req.user.id)
+	req.user && (req.params.id = req.user._id)
 	next()
 }
 export const getOneUser = getOneDocument(UserModel)

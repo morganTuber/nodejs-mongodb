@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { compare } from 'bcryptjs'
 import { NextFunction, Request, Response } from 'express'
 
 import { UserModel } from '~models/user.model'
@@ -17,11 +16,15 @@ type AuthController = (req: Request, res: Response, next: NextFunction) => void
 
 const MILLISECONDS_IN_DAY = 24 * 60 * 60 * 1000
 
-const createAndSendToken = <T extends { _id: string }>(user: T, res: Response) => {
+const createAndSendToken = <T extends { _id: string }>(
+	user: T,
+	res: Response
+) => {
 	const token = generateJwt({ _id: user._id })
 	res.cookie('jwt', token, {
 		secure: process.env.NODE_ENV === 'production',
 		httpOnly: true,
+		//set the expiration date of jwt cookie to 90 days
 		expires: new Date(Date.now() + 90 * MILLISECONDS_IN_DAY),
 	})
 	res.json({
@@ -50,8 +53,11 @@ export const signup = catchAsync(async (req, res, _next) => {
 		passwordConfirm,
 		photo,
 		passwordChangedAt,
+		//if the request contains adminPassword and if the admin password is correct then user role is set as admin else it is set as user
 		role:
-			adminPassword && adminPassword === getEnv('ADMIN_PASSWORD') ? role : Role.user,
+			adminPassword && adminPassword === getEnv('ADMIN_PASSWORD')
+				? role
+				: Role.user,
 	})
 	createAndSendToken(newUser, res)
 })
@@ -59,7 +65,11 @@ export const login = catchAsync(async (req, res, next) => {
 	const { email, password } = req.body as Pick<IUser, 'email' | 'password'>
 	const foundeUser = await UserModel.findOne({ email }).select('+password')
 
-	if (foundeUser && (await compare(password, foundeUser.password))) {
+	// if (foundeUser && (await compare(password, foundeUser.password))) {
+	if (
+		foundeUser &&
+		(await foundeUser.comparePassword(password, foundeUser.password))
+	) {
 		createAndSendToken(foundeUser, res)
 	} else {
 		next(new CustomError('Invalid username or password', 401))
@@ -73,7 +83,7 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 		throw new CustomError(`User not found`, HttpStatus.NOT_FOUND)
 	}
 	const resetToken = user.createPasswordResetToken()
-	await user.save({ validateBeforeSave: false })
+	await user.save({ validateModifiedOnly: true })
 	sendEmail({
 		email: 'sachinaryal200@gmail.com',
 		subject: 'Password Reset Request',
@@ -86,49 +96,61 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 		message: 'Password Reset Request Sent',
 	})
 })
-export const resetPassword: AuthController = catchAsync(async (req, res, next) => {
-	const passwordResetToken = req.params.resetToken
-	const { newPassword, confirmNewPassword } = req.body as {
-		newPassword: string
-		confirmNewPassword: string
-	}
-	const user = await UserModel.findOne({
-		passwordResetToken,
-		passwordResetTokenExpiresIn: { $gt: Date.now() },
-	}).select('+password')
-	if (!user) {
-		throw new CustomError('Token is invalid or expired', HttpStatus.UNAUTHORIZED)
-	}
-
-	user.password = newPassword
-	user.passwordConfirm = confirmNewPassword
-	user.passwordResetToken = undefined
-	user.passwordResetTokenExpiresIn = undefined
-	await user.save({ validateModifiedOnly: true })
-	createAndSendToken(user, res)
-})
-export const changePassword = catchAsync(async (req: WithUserReq, res, next) => {
-	const authenticatedUser = req.user as IUser
-	const { password, confirmPassword, currentPassword } = req.body as {
-		currentPassword: string
-		password: string
-		confirmPassword: string
-	}
-	try {
-		const user = await UserModel.findById(authenticatedUser._id).select('+password')
+export const resetPassword: AuthController = catchAsync(
+	async (req, res, next) => {
+		const passwordResetToken = req.params.resetToken
+		const { newPassword, confirmNewPassword } = req.body as {
+			newPassword: string
+			confirmNewPassword: string
+		}
+		const user = await UserModel.findOne({
+			passwordResetToken,
+			passwordResetTokenExpiresIn: { $gt: Date.now() },
+		}).select('+password')
 		if (!user) {
-			throw new CustomError('User not found', HttpStatus.NOT_FOUND)
+			throw new CustomError(
+				'Token is invalid or expired',
+				HttpStatus.UNAUTHORIZED
+			)
 		}
-		if (await compare(currentPassword, user.password)) {
-			user.password = password
-			user.passwordConfirm = confirmPassword
-			user.passwordChangedAt = new Date()
-			await user.save({ validateModifiedOnly: true })
-			createAndSendToken(user, res)
-		} else {
-			throw new CustomError('Invalid password', HttpStatus.UNAUTHORIZED)
-		}
-	} catch (error: any) {
-		throw new CustomError(error, HttpStatus.UNAUTHORIZED)
+
+		user.password = newPassword
+		user.passwordConfirm = confirmNewPassword
+		user.passwordResetToken = undefined
+		user.passwordResetTokenExpiresIn = undefined
+		await user.save({ validateModifiedOnly: true })
+		createAndSendToken(user, res)
 	}
-})
+)
+export const changePassword = catchAsync(
+	async (req: WithUserReq, res, next) => {
+		const authenticatedUser = req.user as IUser
+		const { password, confirmPassword, currentPassword } = req.body as {
+			currentPassword: string
+			password: string
+			confirmPassword: string
+		}
+		try {
+			const user = await UserModel.findById(authenticatedUser._id).select(
+				'+password'
+			)
+			if (!user) {
+				throw new CustomError('User not found', HttpStatus.NOT_FOUND)
+			}
+			if (await user.comparePassword(currentPassword, user.password)) {
+				user.password = password
+				user.passwordConfirm = confirmPassword
+				user.passwordChangedAt = new Date()
+				await user.save({ validateModifiedOnly: true })
+				createAndSendToken(user, res)
+			} else {
+				throw new CustomError(
+					'Invalid password',
+					HttpStatus.UNAUTHORIZED
+				)
+			}
+		} catch (error: any) {
+			throw new CustomError(error, HttpStatus.UNAUTHORIZED)
+		}
+	}
+)

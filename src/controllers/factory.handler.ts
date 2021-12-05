@@ -16,7 +16,10 @@ export const deleteDocument = (model: Model) =>
 		const doc = await model.findByIdAndDelete(req.params.id)
 		if (!doc) {
 			return next(
-				new CustomError(`No document found with that ID ${req.params.id}`, 404)
+				new CustomError(
+					`No document found with that ID ${req.params.id}`,
+					404
+				)
 			)
 		}
 		sendResponse({
@@ -27,10 +30,16 @@ export const deleteDocument = (model: Model) =>
 	})
 export const updateDocument = (model: Model) =>
 	catchAsync(async (req, res, next) => {
-		const updatedDoc = await model.findByIdAndUpdate(req.params.id, req.body)
+		const updatedDoc = await model.findByIdAndUpdate(
+			req.params.id,
+			req.body
+		)
 		if (!updateDocument) {
 			return next(
-				new CustomError(`No document found with that ID ${req.params.id}`, 404)
+				new CustomError(
+					`No document found with that ID ${req.params.id}`,
+					404
+				)
 			)
 		}
 		sendResponse({
@@ -61,7 +70,10 @@ export const getOneDocument = (
 		const doc = await query
 		if (!doc) {
 			return next(
-				new CustomError(`No document found with that ID ${req.params.id}`, 404)
+				new CustomError(
+					`No document found with that ID ${req.params.id}`,
+					404
+				)
 			)
 		}
 		sendResponse({
@@ -81,7 +93,10 @@ export const getAllDocuments = (model: Model) =>
 		]) as Record<string, string>
 		//replace standard query object key with mongodb query key
 		query = JSON.parse(
-			JSON.stringify(query).replace(/\b(gte|lte|gt|lt)\b/g, match => `$${match}`)
+			JSON.stringify(query).replace(
+				/\b(gte|lte|gt|lt)\b/g,
+				match => `$${match}`
+			)
 		) as Record<string, string>
 
 		const docQuery = model.find(query)

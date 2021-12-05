@@ -33,6 +33,7 @@
 			{
 				"argsIgnorePattern": "req|res|next|^_"
 			}
-		]
+		],
+		"@typescript-eslint/explicit-module-boundary-types": "off"
 	}
 }

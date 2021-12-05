@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { NextFunction, Request, Response } from 'express'
-
 import {
 	createDocument,
 	deleteDocument,
@@ -9,10 +6,16 @@ import {
 	updateDocument,
 } from '~controllers/factory.handler'
 import { TourModel } from '~models/tour.model'
+import { HttpStatus } from '~typings/http-status.enum'
 import { catchAsync } from '~utils/catchAsync'
+import { CustomError } from '~utils/customError'
 import { sendResponse } from '~utils/sendResponse'
 
-type TourController = (req: Request, res: Response, next: NextFunction) => void
+export interface NearbyToursQueryDto {
+	distance?: string
+	latlong?: string
+	unit?: string
+}
 
 export const getAllTours = getAllDocuments(TourModel)
 export const getTourById = getOneDocument(TourModel, { path: 'reviews' })
@@ -20,7 +23,67 @@ export const createTour = createDocument(TourModel)
 export const updateTour = updateDocument(TourModel)
 export const deleteTour = deleteDocument(TourModel)
 
-export const getTourStats: TourController = catchAsync(async (_req, res, next) => {
+export const getNearbyTours = catchAsync(async (req, res, next) => {
+	const { distance, latlong, unit = 'mi' } = req.query as unknown as NearbyToursQueryDto
+	if (!latlong || !distance) {
+		return next(
+			new CustomError(
+				'Latitude,longitude and distance are required in the format distance=10&latlong=10,20',
+				HttpStatus.BAD_REQUEST
+			)
+		)
+	}
+	const [lat, long] = latlong.split(',')
+	const radius = unit === 'mi' ? +distance / 3963.2 : +distance / 6378.1
+	const nearbyTours = await TourModel.find({
+		startLocation: { $geoWithin: { $centerSphere: [[long, lat], radius] } },
+	})
+	sendResponse({
+		res,
+		status: 'Success',
+		results: nearbyTours.length,
+		data: {
+			tours: nearbyTours,
+		},
+	})
+})
+export const getNearbyTourDistances = catchAsync(async (req, res, next) => {
+	const { latlong, unit } = req.query as unknown as Omit<NearbyToursQueryDto, 'distance'>
+	if (!latlong) {
+		return next(
+			new CustomError('Latitude and longitude are required', HttpStatus.BAD_REQUEST)
+		)
+	}
+	const [lat, long] = latlong.split(',')
+	const multiplier = unit === 'mi' ? 0.000621371 : 0.001
+	const nearbyTourDistances = await TourModel.aggregate<{ distance: number; name: string }>([
+		{
+			$geoNear: {
+				near: {
+					type: 'Point',
+					coordinates: [+long, +lat],
+				},
+				distanceField: 'distance',
+				distanceMultiplier: multiplier,
+			},
+		},
+		{
+			$project: {
+				distance: 1,
+				name: 1,
+			},
+		},
+	])
+	sendResponse({
+		res,
+		status: 'Success',
+		results: nearbyTourDistances.length,
+		data: {
+			distances: nearbyTourDistances,
+		},
+	})
+})
+export const getTourStats = catchAsync(async (_req, res, next) => {
 	const stats = await TourModel.aggregate([
 		{
 			$group: {
@@ -41,7 +104,7 @@ export const getTourStats: TourController = catchAsync(async (_req, res, next) =
 		data: { stats },
 	})
 })
-export const getMonthlyPlan: TourController = catchAsync(async (req, res) => {
+export const getMonthlyPlan = catchAsync(async (req, res) => {
 	const { year } = req.params
 	const plan = await TourModel.aggregate([
 		{

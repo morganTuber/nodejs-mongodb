@@ -5,7 +5,7 @@ import {
 	pre,
 	prop,
 } from '@typegoose/typegoose'
-import { hash } from 'bcryptjs'
+import { compare } from 'bcryptjs'
 import { createHash, randomBytes } from 'crypto'
 
 import { Role } from '~typings/role.enum'
@@ -16,15 +16,16 @@ import { Role } from '~typings/role.enum'
 		toObject: { virtuals: true },
 	},
 })
-@pre<User>('save', async function (next) {
-	if (this.isModified('password')) {
-		this.password = await hash(this.password, 12)
-		this.passwordConfirm = undefined
-		//do not set passwordChangedAt field when the user is created for the first time
-		!this.isNew && (this.passwordChangedAt = new Date())
-	}
-	void next()
-})
+// @pre<User>('save', async function (next) {
+// 	//hash the password everytime password is changed
+// 	if (this.isModified('password')) {
+// 		this.password = await hash(this.password, 12)
+// 		this.passwordConfirm = undefined
+// 		//do not set passwordChangedAt field when the user is created for the first time
+// 		!this.isNew && (this.passwordChangedAt = new Date())
+// 	}
+// 	void next()
+// })
 @pre<typeof UserModel>(/^find/, function (next) {
 	this.find({ isActive: true })
 	next()
@@ -68,7 +69,8 @@ export class User {
 		required: [true, 'Confirmation password required'],
 		validate: {
 			validator: function (password: string) {
-				const originalPassword = (this as unknown as DocumentType<User>).password
+				const originalPassword = (this as unknown as DocumentType<User>)
+					.password
 				return password === originalPassword.slice()
 			},
 			message: 'Password didnt match',
@@ -94,15 +96,28 @@ export class User {
 	//methods
 	public isPasswordChanged(jwtExpirationDate: number): boolean {
 		if (this.passwordChangedAt) {
-			return jwtExpirationDate < Number(this.passwordChangedAt.getTime() / 1000)
+			return (
+				jwtExpirationDate <
+				Number(this.passwordChangedAt.getTime() / 1000)
+			)
 		}
 		return false
 	}
 	public createPasswordResetToken(): string {
 		const resetToken = randomBytes(32).toString('hex')
-		this.passwordResetToken = createHash('sha256').update(resetToken).digest('hex')
+		this.passwordResetToken = createHash('sha256')
+			.update(resetToken)
+			.digest('hex')
 		this.passwordResetTokenExpiresIn = new Date().getTime() + 10 * 60 * 1000
 		return this.passwordResetToken
+	}
+	/** Compares the raw password provided by the user with the hashed password stored in the database */
+	public async comparePassword(
+		password: string,
+		dbPasswordHash: string
+	): Promise<boolean> {
+		const isMatch = await compare(password, dbPasswordHash)
+		return isMatch
 	}
 }
 export const UserModel = getModelForClass(User)

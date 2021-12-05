@@ -1,7 +1,7 @@
 import {
 	getModelForClass,
+	index,
 	modelOptions,
-	mongoose,
 	pre,
 	prop,
 	Ref,
@@ -9,7 +9,44 @@ import {
 } from '@typegoose/typegoose'
 
 import { Review } from '~models/review.model'
+import { User } from '~models/user.model'
 import { ITour } from '~typings/tour.interface'
+
+@modelOptions({
+	options: { allowMixed: Severity.ALLOW },
+})
+class Location {
+	@prop({ default: 'Point', enum: ['Point'] })
+	public type: string
+
+	@prop({ type: Number })
+	public coordinates: number[]
+
+	@prop()
+	public description: string
+
+	@prop()
+	public address: string
+
+	@prop()
+	public day: number
+}
+@modelOptions({
+	options: { allowMixed: Severity.ALLOW },
+})
+class StartLocation {
+	@prop({ default: 'Point', enum: ['Point'] })
+	public type: string
+
+	@prop({ type: Number })
+	public coordinates: number[]
+
+	@prop()
+	public address: string
+
+	@prop()
+	public description: string
+}
 
 @modelOptions({
 	options: { allowMixed: Severity.ALLOW },
@@ -25,6 +62,9 @@ import { ITour } from '~typings/tour.interface'
 	})
 	next()
 })
+@index<Tour>({ price: 1, ratingsAverage: -1 })
+@index<Tour>({ slug: 1 })
+@index<Tour>({ startLocation: '2dsphere' })
 export class Tour implements Omit<ITour, 'id'> {
 	@prop({ required: [true, 'A tour must have a name'], unique: true })
 	public name: string
@@ -45,6 +85,7 @@ export class Tour implements Omit<ITour, 'id'> {
 		default: 4.5,
 		min: 1,
 		max: 5,
+		set: (val: number) => Math.round(val * 10) / 10,
 	})
 	public ratingsAverage: number
 
@@ -66,56 +107,30 @@ export class Tour implements Omit<ITour, 'id'> {
 	@prop({ required: [true, 'A tour must have a cover photo'] })
 	public imageCover: string
 
-	@prop({ type: () => [String] })
+	@prop({ type: String })
 	public images: string[]
 
 	@prop({ default: Date.now() })
 	public createdAt: Date
 
-	@prop({ type: [String] })
+	@prop({ items: String })
 	public startDates: string[]
 
-	@prop({ type: () => StartLocation })
+	@prop({ type: StartLocation })
 	public startLocation: StartLocation
 
-	@prop({ type: () => [Location] })
+	@prop({ type: [Location] })
 	public locations: Location[]
 
 	@prop({ ref: 'User' })
-	public guides: mongoose.Schema.Types.ObjectId[]
+	public guides: Ref<User>[]
 
-	@prop({
-		ref: 'Review',
-		foreignField: 'tour',
-		localField: '_id',
-		justOne: true,
-	})
-	public reviews: Ref<Review>
+	@prop({ ref: 'Review', foreignField: 'tour', localField: '_id' })
+	public reviews: Ref<Review>[]
+
+	public get slug(): string {
+		return this.name.replace(/\s+/g, '-').toLowerCase()
+	}
 }
-class Location {
-	@prop({ default: 'Point', enum: ['Point'] })
-	public type: string
 
-	@prop({ type: Number })
-	public coordinates: mongoose.Types.Array<number>
-
-	@prop()
-	public address: string
-
-	@prop()
-	public description: string
-
-	@prop()
-	public day: number
-}
-class StartLocation {
-	@prop({ default: 'Point', enum: ['Point'] })
-	public type: string
-
-	@prop()
-	public coordinates: mongoose.Types.Array<number>
-
-	@prop()
-	public description: string
-}
 export const TourModel = getModelForClass(Tour)

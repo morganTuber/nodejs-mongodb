@@ -20,20 +20,21 @@ import { Role } from '~typings/role.enum'
 
 const userRouter = Router()
 
-//user routes
-userRouter.get('/', authenticated, restrictTo(Role.admin, Role.guide), getAllUsers)
-userRouter.get('/:id', authenticated, getMe, getOneUser)
 userRouter.post('/signup', signup)
 userRouter.post('/login', login)
-userRouter.delete(
-	'/delete-account',
-	authenticated,
-	restrictTo(Role.admin),
-	deleteUser
-)
 userRouter.post('/forgotPassword', forgotPassword)
-userRouter.post('/changePassword', authenticated, changePassword)
 userRouter.post('/resetPassword/:resetToken', resetPassword)
-userRouter.patch('/update-profile', authenticated, updateUserProfile)
+
+// restrict access to the following routes to authenticated users only
+userRouter.use(authenticated)
+
+userRouter.get('/me', getMe, getOneUser)
+userRouter.post('/changePassword', changePassword)
+userRouter.patch('/update-profile', updateUserProfile)
+
+//restrict access to following routes to users with the role of admin and lead-guide only
+userRouter.use(restrictTo(Role.admin, Role['lead-guide']))
+userRouter.get('/', getAllUsers)
+userRouter.delete('/delete-account', deleteUser)
 
 export default userRouter
