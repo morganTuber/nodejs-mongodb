@@ -11,10 +11,7 @@ import { getEnv } from '~utils/getEnv'
 
 dotenv.config({ path: `${process.cwd()}/config.env` })
 
-const DB_URL = getEnv('DATABASE_URL').replace(
-	'<PASSWORD>',
-	getEnv('DATABASE_PASSWORD')
-)
+const DB_URL = getEnv('DATABASE_URL').replace('<PASSWORD>', getEnv('DATABASE_PASSWORD'))
 connect(DB_URL, { autoIndex: true }, result => {
 	if (result) return console.info(result.message)
 	console.info('Connected to database')
@@ -22,9 +19,9 @@ connect(DB_URL, { autoIndex: true }, result => {
 const displayHelpInfo = () => {
 	console.info('--clean : Clean database\n--seed : Import data')
 }
-type Name = 'tours' | 'reviews' | 'users'
+type ModelName = 'tours' | 'reviews' | 'users'
 
-const getData = (name: Name): unknown[] => {
+const getData = (name: ModelName): unknown[] => {
 	const path = join(process.cwd(), `dev-data/data/${name}.json`)
 	return JSON.parse(readFileSync(path, 'utf-8'))
 }

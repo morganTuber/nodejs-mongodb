@@ -47,7 +47,6 @@ class StartLocation {
 	@prop()
 	public description: string
 }
-
 @modelOptions({
 	options: { allowMixed: Severity.ALLOW },
 	schemaOptions: {
@@ -60,6 +59,10 @@ class StartLocation {
 		path: 'guides',
 		select: '-__v -email',
 	})
+	next()
+})
+@pre<Tour>('save', function (next) {
+	this.slug = this.name.replace(/\s+/g, '-').toLowerCase()
 	next()
 })
 @index<Tour>({ price: 1, ratingsAverage: -1 })
@@ -128,9 +131,8 @@ export class Tour implements Omit<ITour, 'id'> {
 	@prop({ ref: 'Review', foreignField: 'tour', localField: '_id' })
 	public reviews: Ref<Review>[]
 
-	public get slug(): string {
-		return this.name.replace(/\s+/g, '-').toLowerCase()
-	}
+	@prop()
+	public slug: string
 }
 
 export const TourModel = getModelForClass(Tour)

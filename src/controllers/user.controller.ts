@@ -1,11 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Response } from 'express'
 
-import {
-	deleteDocument,
-	getAllDocuments,
-	getOneDocument,
-} from '~controllers/factory.handler'
+import { deleteDocument, getAllDocuments, getOneDocument } from '~controllers/factory.handler'
 import { UserModel } from '~models/user.model'
 import { HttpStatus } from '~typings/http-status.enum'
 import { IUser } from '~typings/user.interface'
@@ -18,7 +14,7 @@ type UpdateUserDto = Partial<Pick<IUser, 'name' | 'email' | 'photo'>>
 
 export const updateUserProfile = catchAsync(async (req: WithUserReq, res, _next) => {
 	const { name, email, photo } = req.body as UpdateUserDto
-	const authenticatedUser = req.user as IUser
+	const authenticatedUser = req.user as Required<IUser>
 	try {
 		const dbUser = await UserModel.findById(authenticatedUser._id)
 		if (!dbUser) {

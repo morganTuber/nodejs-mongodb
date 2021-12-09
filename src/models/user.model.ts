@@ -1,10 +1,4 @@
-import {
-	DocumentType,
-	getModelForClass,
-	modelOptions,
-	pre,
-	prop,
-} from '@typegoose/typegoose'
+import { DocumentType, getModelForClass, modelOptions, pre, prop } from '@typegoose/typegoose'
 import { compare } from 'bcryptjs'
 import { createHash, randomBytes } from 'crypto'
 
@@ -69,8 +63,7 @@ export class User {
 		required: [true, 'Confirmation password required'],
 		validate: {
 			validator: function (password: string) {
-				const originalPassword = (this as unknown as DocumentType<User>)
-					.password
+				const originalPassword = (this as unknown as DocumentType<User>).password
 				return password === originalPassword.slice()
 			},
 			message: 'Password didnt match',
@@ -96,26 +89,18 @@ export class User {
 	//methods
 	public isPasswordChanged(jwtExpirationDate: number): boolean {
 		if (this.passwordChangedAt) {
-			return (
-				jwtExpirationDate <
-				Number(this.passwordChangedAt.getTime() / 1000)
-			)
+			return jwtExpirationDate < Number(this.passwordChangedAt.getTime() / 1000)
 		}
 		return false
 	}
 	public createPasswordResetToken(): string {
 		const resetToken = randomBytes(32).toString('hex')
-		this.passwordResetToken = createHash('sha256')
-			.update(resetToken)
-			.digest('hex')
+		this.passwordResetToken = createHash('sha256').update(resetToken).digest('hex')
 		this.passwordResetTokenExpiresIn = new Date().getTime() + 10 * 60 * 1000
 		return this.passwordResetToken
 	}
 	/** Compares the raw password provided by the user with the hashed password stored in the database */
-	public async comparePassword(
-		password: string,
-		dbPasswordHash: string
-	): Promise<boolean> {
+	public async comparePassword(password: string, dbPasswordHash: string): Promise<boolean> {
 		const isMatch = await compare(password, dbPasswordHash)
 		return isMatch
 	}

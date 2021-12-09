@@ -1,13 +1,5 @@
-import { Role } from '~typings/role.enum'
+import { User } from '~models/user.model'
 
-export interface IUser {
-	id: string
+export interface IUser extends User {
 	_id: string
-	name: string
-	email: string
-	photo?: string
-	password: string
-	passwordConfirm?: string
-	passwordChangedAt?: Date
-	role: Role
 }

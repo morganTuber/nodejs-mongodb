@@ -32,8 +32,8 @@ userRouter.get('/me', getMe, getOneUser)
 userRouter.post('/changePassword', changePassword)
 userRouter.patch('/update-profile', updateUserProfile)
 
-//restrict access to following routes to users with the role of admin and lead-guide only
-userRouter.use(restrictTo(Role.admin, Role['lead-guide']))
+//restrict access to following routes to users with the role of admin
+userRouter.use(restrictTo(Role.admin))
 userRouter.get('/', getAllUsers)
 userRouter.delete('/delete-account', deleteUser)
 

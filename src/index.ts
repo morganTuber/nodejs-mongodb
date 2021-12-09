@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 import express from 'express'
 import mongoSanitize from 'express-mongo-sanitize'
@@ -45,6 +46,8 @@ process.env.NODE_ENV === 'development' && app.use(morgan('dev'))
 app.use(express.urlencoded({ extended: true }))
 //middleware to parse req.body
 app.use(express.json({ limit: '10kb' }))
+//middleware to parse cookies
+app.use(cookieParser())
 //middleware to sanitize data against noSQL injection
 app.use(mongoSanitize())
 //middleware to sanitize data against XSS
@@ -67,9 +70,14 @@ app.use(
 	})
 )
 
-//register routes
+//test middleware
+app.use((req, res, next) => {
+	console.info(req.cookies.jwt)
+	next()
+})
 //view routes
 app.use('/', viewsRouter)
+//api routes
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/reviews', reviewRouter)

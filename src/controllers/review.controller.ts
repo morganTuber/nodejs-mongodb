@@ -28,11 +28,7 @@ export const getAllReviews = catchAsync(async (req, res, _next) => {
 })
 
 // middleware for createDocument controller
-export const setTourUserIds = (
-	req: WithUserReq,
-	res: Response,
-	next: NextFunction
-): void => {
+export const setTourUserIds = (req: WithUserReq, res: Response, next: NextFunction): void => {
 	if (req.user) {
 		!req.body.tour && (req.body.tour = req.params.tourId)
 		!req.body.user && (req.body.user = req.user._id)

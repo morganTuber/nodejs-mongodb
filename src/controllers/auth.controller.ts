@@ -16,10 +16,7 @@ type AuthController = (req: Request, res: Response, next: NextFunction) => void
 
 const MILLISECONDS_IN_DAY = 24 * 60 * 60 * 1000
 
-const createAndSendToken = <T extends { _id: string }>(
-	user: T,
-	res: Response
-) => {
+const createAndSendToken = <T extends { _id: string }>(user: T, res: Response) => {
 	const token = generateJwt({ _id: user._id })
 	res.cookie('jwt', token, {
 		secure: process.env.NODE_ENV === 'production',
@@ -54,10 +51,7 @@ export const signup = catchAsync(async (req, res, _next) => {
 		photo,
 		passwordChangedAt,
 		//if the request contains adminPassword and if the admin password is correct then user role is set as admin else it is set as user
-		role:
-			adminPassword && adminPassword === getEnv('ADMIN_PASSWORD')
-				? role
-				: Role.user,
+		role: adminPassword && adminPassword === getEnv('ADMIN_PASSWORD') ? role : Role.user,
 	})
 	createAndSendToken(newUser, res)
 })
@@ -65,15 +59,10 @@ export const login = catchAsync(async (req, res, next) => {
 	const { email, password } = req.body as Pick<IUser, 'email' | 'password'>
 	const foundeUser = await UserModel.findOne({ email }).select('+password')
 
-	// if (foundeUser && (await compare(password, foundeUser.password))) {
-	if (
-		foundeUser &&
-		(await foundeUser.comparePassword(password, foundeUser.password))
-	) {
-		createAndSendToken(foundeUser, res)
-	} else {
-		next(new CustomError('Invalid username or password', 401))
+	if (foundeUser && (await foundeUser.comparePassword(password, foundeUser.password))) {
+		return createAndSendToken(foundeUser, res)
 	}
+	return next(new CustomError('Invalid username or password', HttpStatus.UNAUTHORIZED))
 })
 export const forgotPassword = catchAsync(async (req, res, next) => {
 	const user = await UserModel.findOne({
@@ -96,61 +85,49 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 		message: 'Password Reset Request Sent',
 	})
 })
-export const resetPassword: AuthController = catchAsync(
-	async (req, res, next) => {
-		const passwordResetToken = req.params.resetToken
-		const { newPassword, confirmNewPassword } = req.body as {
-			newPassword: string
-			confirmNewPassword: string
-		}
-		const user = await UserModel.findOne({
-			passwordResetToken,
-			passwordResetTokenExpiresIn: { $gt: Date.now() },
-		}).select('+password')
-		if (!user) {
-			throw new CustomError(
-				'Token is invalid or expired',
-				HttpStatus.UNAUTHORIZED
-			)
-		}
+export const resetPassword: AuthController = catchAsync(async (req, res, next) => {
+	const passwordResetToken = req.params.resetToken
+	const { newPassword, confirmNewPassword } = req.body as {
+		newPassword: string
+		confirmNewPassword: string
+	}
+	const user = await UserModel.findOne({
+		passwordResetToken,
+		passwordResetTokenExpiresIn: { $gt: Date.now() },
+	}).select('+password')
+	if (!user) {
+		throw new CustomError('Token is invalid or expired', HttpStatus.UNAUTHORIZED)
+	}
 
-		user.password = newPassword
-		user.passwordConfirm = confirmNewPassword
-		user.passwordResetToken = undefined
-		user.passwordResetTokenExpiresIn = undefined
-		await user.save({ validateModifiedOnly: true })
-		createAndSendToken(user, res)
+	user.password = newPassword
+	user.passwordConfirm = confirmNewPassword
+	user.passwordResetToken = undefined
+	user.passwordResetTokenExpiresIn = undefined
+	await user.save({ validateModifiedOnly: true })
+	createAndSendToken(user, res)
+})
+export const changePassword = catchAsync(async (req: WithUserReq, res, next) => {
+	const authenticatedUser = req.user as Required<IUser>
+	const { password, confirmPassword, currentPassword } = req.body as {
+		currentPassword: string
+		password: string
+		confirmPassword: string
 	}
-)
-export const changePassword = catchAsync(
-	async (req: WithUserReq, res, next) => {
-		const authenticatedUser = req.user as IUser
-		const { password, confirmPassword, currentPassword } = req.body as {
-			currentPassword: string
-			password: string
-			confirmPassword: string
+	try {
+		const user = await UserModel.findById(authenticatedUser._id).select('+password')
+		if (!user) {
+			throw new CustomError('User not found', HttpStatus.NOT_FOUND)
 		}
-		try {
-			const user = await UserModel.findById(authenticatedUser._id).select(
-				'+password'
-			)
-			if (!user) {
-				throw new CustomError('User not found', HttpStatus.NOT_FOUND)
-			}
-			if (await user.comparePassword(currentPassword, user.password)) {
-				user.password = password
-				user.passwordConfirm = confirmPassword
-				user.passwordChangedAt = new Date()
-				await user.save({ validateModifiedOnly: true })
-				createAndSendToken(user, res)
-			} else {
-				throw new CustomError(
-					'Invalid password',
-					HttpStatus.UNAUTHORIZED
-				)
-			}
-		} catch (error: any) {
-			throw new CustomError(error, HttpStatus.UNAUTHORIZED)
+		if (await user.comparePassword(currentPassword, user.password)) {
+			user.password = password
+			user.passwordConfirm = confirmPassword
+			user.passwordChangedAt = new Date()
+			await user.save({ validateModifiedOnly: true })
+			createAndSendToken(user, res)
+		} else {
+			throw new CustomError('Invalid password', HttpStatus.UNAUTHORIZED)
 		}
+	} catch (error: any) {
+		throw new CustomError(error, HttpStatus.UNAUTHORIZED)
 	}
-)
+})
