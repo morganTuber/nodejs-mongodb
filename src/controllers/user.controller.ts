@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Response } from 'express'
+import { pick } from 'lodash'
 
 import { deleteDocument, getAllDocuments, getOneDocument } from '~controllers/factory.handler'
 import { UserModel } from '~models/user.model'
@@ -10,31 +11,28 @@ import { catchAsync } from '~utils/catchAsync'
 import { CustomError } from '~utils/customError'
 import { sendResponse } from '~utils/sendResponse'
 
-type UpdateUserDto = Partial<Pick<IUser, 'name' | 'email' | 'photo'>>
-
-export const updateUserProfile = catchAsync(async (req: WithUserReq, res, _next) => {
-	const { name, email, photo } = req.body as UpdateUserDto
+export const updateUserProfile = catchAsync(async (req: WithUserReq, res, next) => {
+	const filteredBody = pick(req.body, 'name', 'email') as Record<string, string>
+	//update user profile if there is a file in req.file
+	req.file && (filteredBody.photo = req.file.filename)
 	const authenticatedUser = req.user as Required<IUser>
-	try {
-		const dbUser = await UserModel.findById(authenticatedUser._id)
-		if (!dbUser) {
-			throw new CustomError(
-				`User doesn't exist or has been deleted`,
-				HttpStatus.NOT_FOUND
-			)
-		}
-		name && (dbUser.name = name)
-		email && (dbUser.email = email)
-		photo && (dbUser.photo = photo)
-		await dbUser.save({ validateModifiedOnly: true })
-		sendResponse({
-			res,
-			status: 'Success',
-			message: 'Successfully updated user profile',
-		})
-	} catch (error: any) {
-		throw new CustomError(error, HttpStatus.UNAUTHORIZED)
+
+	const updatedUser = await UserModel.findByIdAndUpdate(
+		authenticatedUser._id,
+		filteredBody,
+		{ new: true, runValidators: true }
+	)
+	if (!updatedUser) {
+		return next(
+			new CustomError(`User doesn't exist or has been deleted`, HttpStatus.NOT_FOUND)
+		)
 	}
+	sendResponse({
+		res,
+		status: 'Success',
+		message: 'Successfully updated user profile',
+		data: updatedUser,
+	})
 })
 
 //middleware to put user id in req.params

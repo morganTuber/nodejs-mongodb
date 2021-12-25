@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import reviewRouter from 'src/routes/review.routes'
 
 import {
 	createTour,
@@ -14,8 +13,12 @@ import {
 } from '~controllers/tour.controller'
 import { authenticated } from '~middlewares/authenticated'
 import { cheapTours } from '~middlewares/cheapTours'
+import { resizeTourImages } from '~middlewares/resizeImage'
 import { restrictTo } from '~middlewares/restrictTo'
+import { uploadMultiplePhotos } from '~middlewares/uploadPhoto'
 import { Role } from '~typings/role.enum'
+
+import reviewRouter from './review.routes'
 
 const tourRouter = Router()
 
@@ -36,7 +39,21 @@ tourRouter.use(authenticated, restrictTo(Role.admin, Role['lead-guide'], Role.gu
 
 tourRouter.get('/monthly-plan/:year', getMonthlyPlan)
 tourRouter.post('/', createTour)
-tourRouter.patch('/:id', updateTour)
+tourRouter.patch(
+	'/:id',
+	uploadMultiplePhotos([
+		{
+			name: 'imageCover',
+			maxCount: 1,
+		},
+		{
+			name: 'images',
+			maxCount: 3,
+		},
+	]),
+	resizeTourImages,
+	updateTour
+)
 tourRouter.delete('/:id', deleteTour)
 
 export default tourRouter

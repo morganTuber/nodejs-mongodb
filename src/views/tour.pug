@@ -55,11 +55,11 @@ block content
                 img.picture-box__img(src=`/img/tours/${image}` alt=`${tour.name} image ${index + 1}` class=`picture-box__img--${index+1}`)
     section.section-map
         #map(data-locations=`${JSON.stringify(tour.locations)}`)
-
-    section.section-reviews
-        .reviews
-            each review in tour.reviews
-                include _review
+    if tour.reviews.length
+        section.section-reviews
+            .reviews
+                each review in tour.reviews
+                    include _review
     section.section-cta
         .cta
             .cta__img.cta__img--logo
@@ -70,4 +70,7 @@ block content
             .cta__content
                 h2.heading-secondary What are you waiting for?
                 p.cta__text= `${tour.duration} days. 1 adventure. Infinite memories. Make it yours today!`
-                button.btn.btn--green.span-all-rows Book tour now!
+                if user
+                    button(id='book-tour' data-tourId=tour.id).btn.btn--green.span-all-rows Book tour now!
+                else
+                    a(href=`/login?redirect=/tour/${tour.slug}`).btn.btn--green.span-all-rows Login to book tour

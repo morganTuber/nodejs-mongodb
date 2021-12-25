@@ -1,0 +1,12 @@
+extends _sidebar
+block append head
+    style.
+        .bookings {
+            display: grid;
+            grid-template-columns: repeat(2,1fr);
+            align-items:start;
+            padding: 2rem;
+        }
+block sidebar 
+    .bookings
+        include tourList

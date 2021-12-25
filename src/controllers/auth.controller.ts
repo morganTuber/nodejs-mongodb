@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextFunction, Request, Response } from 'express'
+import { Response } from 'express'
 
 import { UserModel } from '~models/user.model'
 import { HttpStatus } from '~typings/http-status.enum'
@@ -8,11 +8,9 @@ import { IUser } from '~typings/user.interface'
 import { WithUserReq } from '~typings/withUserReq'
 import { catchAsync } from '~utils/catchAsync'
 import { CustomError } from '~utils/customError'
+import { Email } from '~utils/email'
 import { generateJwt } from '~utils/generateJwt'
 import { getEnv } from '~utils/getEnv'
-import { sendEmail } from '~utils/sendEmail'
-
-type AuthController = (req: Request, res: Response, next: NextFunction) => void
 
 const MILLISECONDS_IN_DAY = 24 * 60 * 60 * 1000
 
@@ -53,6 +51,8 @@ export const signup = catchAsync(async (req, res, _next) => {
 		//if the request contains adminPassword and if the admin password is correct then user role is set as admin else it is set as user
 		role: adminPassword && adminPassword === getEnv('ADMIN_PASSWORD') ? role : Role.user,
 	})
+	const url = `${req.protocol}://${req.get('host')}/account`
+	await new Email(newUser, url).welcome()
 	createAndSendToken(newUser, res)
 })
 export const login = catchAsync(async (req, res, next) => {
@@ -66,26 +66,21 @@ export const login = catchAsync(async (req, res, next) => {
 })
 export const forgotPassword = catchAsync(async (req, res, next) => {
 	const user = await UserModel.findOne({
-		email: (req.body as { email: string }).email,
+		email: req.body.email,
 	})
 	if (!user) {
-		throw new CustomError(`User not found`, HttpStatus.NOT_FOUND)
+		return next(new CustomError(`User not found`, HttpStatus.NOT_FOUND))
 	}
 	const resetToken = user.createPasswordResetToken()
 	await user.save({ validateModifiedOnly: true })
-	sendEmail({
-		email: 'sachinaryal200@gmail.com',
-		subject: 'Password Reset Request',
-		text: `Please send a patch request to http://localhost:4000/api/v1/users/resetPassword/${resetToken} with new password and passwordConfirmation.If you didn't forgot your password,please ignore this email!`,
-	})
-		.then(() => console.info(`Successfully sent a password reset request`))
-		.catch(error => console.info(error))
+	const url = `${req.protocol}://${req.get('host')}/reset-password?resetToken=${resetToken}`
+	await new Email(user, url).forgotPassword()
 	res.json({
 		status: 'Success',
-		message: 'Password Reset Request Sent',
+		message: 'Please check your email for password reset link',
 	})
 })
-export const resetPassword: AuthController = catchAsync(async (req, res, next) => {
+export const resetPassword = catchAsync(async (req, res, next) => {
 	const passwordResetToken = req.params.resetToken
 	const { newPassword, confirmNewPassword } = req.body as {
 		newPassword: string
@@ -96,11 +91,12 @@ export const resetPassword: AuthController = catchAsync(async (req, res, next) =
 		passwordResetTokenExpiresIn: { $gt: Date.now() },
 	}).select('+password')
 	if (!user) {
-		throw new CustomError('Token is invalid or expired', HttpStatus.UNAUTHORIZED)
+		return next(new CustomError('Token is invalid or expired', HttpStatus.UNAUTHORIZED))
 	}
 
 	user.password = newPassword
 	user.passwordConfirm = confirmNewPassword
+	user.passwordChangedAt = new Date()
 	user.passwordResetToken = undefined
 	user.passwordResetTokenExpiresIn = undefined
 	await user.save({ validateModifiedOnly: true })
@@ -113,21 +109,25 @@ export const changePassword = catchAsync(async (req: WithUserReq, res, next) => 
 		password: string
 		confirmPassword: string
 	}
-	try {
-		const user = await UserModel.findById(authenticatedUser._id).select('+password')
-		if (!user) {
-			throw new CustomError('User not found', HttpStatus.NOT_FOUND)
-		}
-		if (await user.comparePassword(currentPassword, user.password)) {
-			user.password = password
-			user.passwordConfirm = confirmPassword
-			user.passwordChangedAt = new Date()
-			await user.save({ validateModifiedOnly: true })
-			createAndSendToken(user, res)
-		} else {
-			throw new CustomError('Invalid password', HttpStatus.UNAUTHORIZED)
-		}
-	} catch (error: any) {
-		throw new CustomError(error, HttpStatus.UNAUTHORIZED)
+
+	const user = await UserModel.findById(authenticatedUser._id).select('+password')
+	if (!user) {
+		return next(new CustomError('User not found', HttpStatus.NOT_FOUND))
 	}
+	if (await user.comparePassword(currentPassword, user.password)) {
+		user.password = password
+		user.passwordConfirm = confirmPassword
+		user.passwordChangedAt = new Date()
+		await user.save({ validateModifiedOnly: true })
+		createAndSendToken(user, res)
+	} else {
+		return next(new CustomError('Invalid password', HttpStatus.UNAUTHORIZED))
+	}
+})
+
+export const logout = catchAsync(async (req, res, next) => {
+	res.clearCookie('jwt')
+	res.json({
+		status: 'success',
+	})
 })

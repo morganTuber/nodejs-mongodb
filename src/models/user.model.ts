@@ -1,5 +1,5 @@
 import { DocumentType, getModelForClass, modelOptions, pre, prop } from '@typegoose/typegoose'
-import { compare } from 'bcryptjs'
+import { compare, hash } from 'bcryptjs'
 import { createHash, randomBytes } from 'crypto'
 
 import { Role } from '~typings/role.enum'
@@ -10,16 +10,16 @@ import { Role } from '~typings/role.enum'
 		toObject: { virtuals: true },
 	},
 })
-// @pre<User>('save', async function (next) {
-// 	//hash the password everytime password is changed
-// 	if (this.isModified('password')) {
-// 		this.password = await hash(this.password, 12)
-// 		this.passwordConfirm = undefined
-// 		//do not set passwordChangedAt field when the user is created for the first time
-// 		!this.isNew && (this.passwordChangedAt = new Date())
-// 	}
-// 	void next()
-// })
+@pre<User>('save', async function (next) {
+	//hash the password everytime password is changed
+	if (this.isModified('password')) {
+		this.password = await hash(this.password, 12)
+		this.passwordConfirm = undefined
+		//do not set passwordChangedAt field when the user is created for the first time
+		!this.isNew && (this.passwordChangedAt = new Date())
+	}
+	next()
+})
 @pre<typeof UserModel>(/^find/, function (next) {
 	this.find({ isActive: true })
 	next()
@@ -41,7 +41,7 @@ export class User {
 	})
 	public email: string
 
-	@prop()
+	@prop({ default: 'default.jpg' })
 	public photo?: string
 
 	@prop({
@@ -71,7 +71,7 @@ export class User {
 	})
 	public passwordConfirm?: string
 
-	@prop()
+	@prop({ select: false })
 	public passwordChangedAt?: Date
 
 	@prop({ enum: Role, default: Role.user })

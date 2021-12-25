@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { ReturnModelType } from '@typegoose/typegoose'
 import { AnyParamConstructor, BeAnObject } from '@typegoose/typegoose/lib/types'
 import { omit } from 'lodash'
@@ -16,10 +15,7 @@ export const deleteDocument = (model: Model) =>
 		const doc = await model.findByIdAndDelete(req.params.id)
 		if (!doc) {
 			return next(
-				new CustomError(
-					`No document found with that ID ${req.params.id}`,
-					404
-				)
+				new CustomError(`No document found with that ID ${req.params.id}`, 404)
 			)
 		}
 		sendResponse({
@@ -30,16 +26,13 @@ export const deleteDocument = (model: Model) =>
 	})
 export const updateDocument = (model: Model) =>
 	catchAsync(async (req, res, next) => {
-		const updatedDoc = await model.findByIdAndUpdate(
-			req.params.id,
-			req.body
-		)
+		const updatedDoc = await model.findByIdAndUpdate(req.params.id, req.body, {
+			new: true,
+			runValidators: true,
+		})
 		if (!updateDocument) {
 			return next(
-				new CustomError(
-					`No document found with that ID ${req.params.id}`,
-					404
-				)
+				new CustomError(`No document found with that ID ${req.params.id}`, 404)
 			)
 		}
 		sendResponse({
@@ -60,20 +53,14 @@ export const createDocument = (model: Model) =>
 			data: doc,
 		})
 	})
-export const getOneDocument = (
-	model: Model,
-	populateOptions?: Record<string, string>
-) =>
+export const getOneDocument = (model: Model, populateOptions?: Record<string, string>) =>
 	catchAsync(async (req, res, next) => {
 		let query = model.findById(req.params.id)
 		populateOptions && (query = query.populate(populateOptions))
 		const doc = await query
 		if (!doc) {
 			return next(
-				new CustomError(
-					`No document found with that ID ${req.params.id}`,
-					404
-				)
+				new CustomError(`No document found with that ID ${req.params.id}`, 404)
 			)
 		}
 		sendResponse({
@@ -85,18 +72,13 @@ export const getOneDocument = (
 
 export const getAllDocuments = (model: Model) =>
 	catchAsync(async (req, res, _next) => {
-		let query = omit({ ...req.query }, [
-			'page',
-			'sort',
-			'limit',
-			'fields',
-		]) as Record<string, string>
+		let query = omit({ ...req.query }, ['page', 'sort', 'limit', 'fields']) as Record<
+			string,
+			string
+		>
 		//replace standard query object key with mongodb query key
 		query = JSON.parse(
-			JSON.stringify(query).replace(
-				/\b(gte|lte|gt|lt)\b/g,
-				match => `$${match}`
-			)
+			JSON.stringify(query).replace(/\b(gte|lte|gt|lt)\b/g, match => `$${match}`)
 		) as Record<string, string>
 
 		const docQuery = model.find(query)

@@ -1,5 +1,15 @@
+import { bookingModel } from '~models/booking.model'
 import { TourModel } from '~models/tour.model'
+import { HttpStatus } from '~typings/http-status.enum'
+import { WithUserReq } from '~typings/withUserReq'
 import { catchAsync } from '~utils/catchAsync'
+import { CustomError } from '~utils/customError'
+
+interface OrderSuccessQuery {
+	tourId: string
+	userId: string
+	price: string
+}
 
 export const getOverView = catchAsync(async (req, res, next) => {
 	const tours = await TourModel.find()
@@ -10,18 +20,14 @@ export const getOverView = catchAsync(async (req, res, next) => {
 })
 export const getTour = catchAsync(async (req, res, next) => {
 	const { slug } = req.params
-	console.info(`The slug is ${slug}`)
 	const tour = await TourModel.findOne({ slug }).populate({
 		path: 'reviews',
 		fields: 'review rating user',
 	})
 	if (!tour) {
-		return res.redirect('/')
+		return next(new CustomError(`Tour not found`, HttpStatus.NOT_FOUND))
 	}
-	res.set(
-		'Content-Security-Policy',
-		"default-src 'self' https://*.mapbox.com ;base-uri 'self';block-all-mixed-content;font-src 'self' https: data:;frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src https://cdnjs.cloudflare.com https://api.mapbox.com 'self' blob: ;script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests;"
-	).render('tour', {
+	res.render('tour', {
 		title: tour.name,
 		tour,
 	})
@@ -30,5 +36,46 @@ export const getTour = catchAsync(async (req, res, next) => {
 export const loginForm = catchAsync(async (req, res, next) => {
 	res.render('login', {
 		title: 'Login to your account',
+	})
+})
+
+export const signupForm = catchAsync(async (req, res, next) => {
+	res.render('signup', {
+		title: 'Create a new account',
+	})
+})
+export const getAccount = catchAsync(async (req: WithUserReq, res, next) => {
+	const user = req.user
+	res.render('account', {
+		title: 'Your profile',
+		user,
+	})
+})
+export const forgotPasswordForm = catchAsync(async (req, res, next) => {
+	res.render('forgotPassword', {
+		title: 'Forgot Password',
+	})
+})
+export const resetPasswordForm = catchAsync(async (req, res, next) => {
+	res.render('resetPassword', {
+		title: 'Reset Password',
+	})
+})
+export const orderSuccessPage = catchAsync(async (req, res, next) => {
+	//create a new booking once the user visits the success page
+	const { tourId, userId, price } = req.query as unknown as OrderSuccessQuery
+	if (!tourId && !userId && !price) return next()
+	await bookingModel.create({ tour: tourId, user: userId, price })
+	res.render('success', {
+		title: 'Order Success',
+		tour: req.query.tour,
+	})
+})
+export const userBookingsPage = catchAsync(async (req: WithUserReq, res, next) => {
+	const bookings = await bookingModel.find({ user: req.user?._id })
+	const tours = bookings.map(booking => booking.tour)
+	res.render('bookings', {
+		title: 'Your Bookings',
+		tours,
 	})
 })

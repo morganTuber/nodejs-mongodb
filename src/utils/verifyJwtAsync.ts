@@ -7,7 +7,7 @@ export const verifyJwtAsync = <T extends jwt.JwtPayload>(token: string): Promise
 	return new Promise((resolve, reject) => {
 		jwt.verify(token, JWT_SECRET, (error, data) => {
 			if (error) {
-				reject('Invalid Token')
+				reject({ statusCode: 400, message: 'Invalid token' })
 			} else {
 				resolve(data as T)
 			}

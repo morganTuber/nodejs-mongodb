@@ -16,12 +16,13 @@ import { globalErrors } from '~middlewares/globalErrors'
 import { CustomError } from '~utils/customError'
 import { getEnv } from '~utils/getEnv'
 
+import bookingRouter from './routes/booking.routes'
 import tourRouter from './routes/tour.routes'
 import userRouter from './routes/user.route'
 //configure dotenv
 dotenv.config({ path: `${process.cwd()}/config.env` })
 
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || '4000'
 
 //db credentials
 const DB_URL = getEnv('DATABASE_URL').replace('<PASSWORD>', getEnv('DATABASE_PASSWORD'))
@@ -33,8 +34,8 @@ const app = express()
 app.set('view engine', 'pug')
 app.set('views', `${process.cwd()}/src/views`)
 //connect to the mongodb database
-connect(DB_URL, { autoIndex: true }, result => {
-	if (result) return console.log(result.message)
+connect(DB_URL, { autoIndex: true }, error => {
+	if (error) return console.log(error.message)
 	console.log('✔️ Successfully connected to the database')
 })
 
@@ -43,7 +44,7 @@ connect(DB_URL, { autoIndex: true }, result => {
 app.use(helmet())
 //only enable logging when in development
 process.env.NODE_ENV === 'development' && app.use(morgan('dev'))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 //middleware to parse req.body
 app.use(express.json({ limit: '10kb' }))
 //middleware to parse cookies
@@ -70,9 +71,12 @@ app.use(
 	})
 )
 
-//test middleware
+//middleware for handling single tasks
 app.use((req, res, next) => {
-	console.info(req.cookies.jwt)
+	res.set(
+		'Content-Security-Policy',
+		"default-src 'self' https://*.mapbox.com https://*.stripe.com ;base-uri 'self';block-all-mixed-content;font-src 'self' https: data:;frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src https://cdnjs.cloudflare.com https://api.mapbox.com https://js.stripe.com/v3/ 'self' blob: ;script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests;"
+	)
 	next()
 })
 //view routes
@@ -81,6 +85,7 @@ app.use('/', viewsRouter)
 app.use('/api/v1/tours', tourRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/reviews', reviewRouter)
+app.use('/api/v1/bookings', bookingRouter)
 
 //handle invalid routes
 app.all('*', (req, _res, next) => {

@@ -2,23 +2,31 @@ const path = require('path')
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 const nodeExternals = require('webpack-node-externals')
 
-const { NODE_ENV = 'production' } = process.env
+const environment = process.env.NODE_ENV ?? 'development'
 /**
  * @type import('webpack').Configuration
  */
+console.log(environment)
 module.exports = {
-	entry: path.resolve(__dirname, 'src/index.ts'),
-	mode: NODE_ENV,
+	entry: {
+		server: path.resolve(__dirname, 'src/index.ts'),
+	},
+	mode: environment,
 	target: 'node',
 	output: {
 		path: path.resolve(__dirname, 'build'),
-		filename: 'index.js',
+		filename: '[name].bundle.js',
+		clean: true,
 	},
 	resolve: {
 		extensions: ['.ts', '.js'],
 		plugins: [new TsconfigPathsPlugin()],
 	},
-	externals: [nodeExternals()],
+	externals: [
+		nodeExternals({
+			allowlist: ['axios'],
+		}),
+	],
 	module: {
 		rules: [
 			{
@@ -27,7 +35,7 @@ module.exports = {
 			},
 		],
 	},
-	watch: NODE_ENV === 'development',
+	watch: environment === 'development',
 	optimization: {
 		emitOnErrors: false,
 	},

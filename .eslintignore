@@ -2,3 +2,4 @@ node_modules
 build
 *.config.js
 public
+*.d.ts

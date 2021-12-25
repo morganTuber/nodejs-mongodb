@@ -6,7 +6,8 @@ import { verifyJwtAsync } from '~utils/verifyJwtAsync'
  * @description Middleware to check if user is logged in
  */
 export const isLoggedIn = catchAsync(async (req, res, next) => {
-	if (req.cookies.jwt) {
+	//only check if a user is logged in or not if the request is made from browser
+	if (!req.originalUrl.startsWith('/api') && req.cookies.jwt) {
 		const token = req.cookies.jwt as string
 		const decoded = await verifyJwtAsync<{ _id: string; iat: number }>(token)
 
@@ -21,5 +22,4 @@ export const isLoggedIn = catchAsync(async (req, res, next) => {
 		return next()
 	}
 	next()
-	console.info('Is logged in middleware ran')
 })
