@@ -1,5 +1,4 @@
-import { ReturnModelType } from '@typegoose/typegoose'
-import { AnyParamConstructor, BeAnObject } from '@typegoose/typegoose/lib/types'
+import { ModelType } from '@typegoose/typegoose/lib/types'
 import { omit } from 'lodash'
 
 import { ApiFeatures } from '~utils/apiFeatures'
@@ -7,10 +6,8 @@ import { catchAsync } from '~utils/catchAsync'
 import { CustomError } from '~utils/customError'
 import { sendResponse } from '~utils/sendResponse'
 
-type Model = ReturnModelType<AnyParamConstructor<unknown>, BeAnObject>
-
 /** Delete document*/
-export const deleteDocument = (model: Model) =>
+export const deleteDocument = <T>(model: ModelType<T>) =>
 	catchAsync(async (req, res, next) => {
 		const doc = await model.findByIdAndDelete(req.params.id)
 		if (!doc) {
@@ -24,7 +21,7 @@ export const deleteDocument = (model: Model) =>
 			message: `Deleted document with id ${req.params.id}`,
 		})
 	})
-export const updateDocument = (model: Model) =>
+export const updateDocument = <T>(model: ModelType<T>) =>
 	catchAsync(async (req, res, next) => {
 		const updatedDoc = await model.findByIdAndUpdate(req.params.id, req.body, {
 			new: true,
@@ -43,7 +40,7 @@ export const updateDocument = (model: Model) =>
 		})
 	})
 
-export const createDocument = (model: Model) =>
+export const createDocument = <T>(model: ModelType<T>) =>
 	catchAsync(async (req, res, _next) => {
 		const doc = await model.create(req.body)
 		sendResponse({
@@ -53,7 +50,10 @@ export const createDocument = (model: Model) =>
 			data: doc,
 		})
 	})
-export const getOneDocument = (model: Model, populateOptions?: Record<string, string>) =>
+export const getOneDocument = <T>(
+	model: ModelType<T>,
+	populateOptions?: Record<string, string>
+) =>
 	catchAsync(async (req, res, next) => {
 		let query = model.findById(req.params.id)
 		populateOptions && (query = query.populate(populateOptions))
@@ -70,7 +70,7 @@ export const getOneDocument = (model: Model, populateOptions?: Record<string, st
 		})
 	})
 
-export const getAllDocuments = (model: Model) =>
+export const getAllDocuments = <T>(model: ModelType<T>) =>
 	catchAsync(async (req, res, _next) => {
 		let query = omit({ ...req.query }, ['page', 'sort', 'limit', 'fields']) as Record<
 			string,

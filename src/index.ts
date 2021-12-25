@@ -8,8 +8,6 @@ import helmet from 'helmet'
 import hpp from 'hpp'
 import { connect } from 'mongoose'
 import morgan from 'morgan'
-import reviewRouter from 'src/routes/review.routes'
-import viewsRouter from 'src/routes/view.routes'
 import xssClean from 'xss-clean'
 
 import { globalErrors } from '~middlewares/globalErrors'
@@ -17,8 +15,11 @@ import { CustomError } from '~utils/customError'
 import { getEnv } from '~utils/getEnv'
 
 import bookingRouter from './routes/booking.routes'
+import reviewRouter from './routes/review.routes'
 import tourRouter from './routes/tour.routes'
 import userRouter from './routes/user.route'
+import viewsRouter from './routes/view.routes'
+
 //configure dotenv
 dotenv.config({ path: `${process.cwd()}/config.env` })
 

@@ -8,13 +8,13 @@
     "rootDir": "src",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "target": "es5",
+    "target": "ES2015",
     "module": "commonjs",
     "moduleResolution": "node",
     "importHelpers": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "noImplicitAny": true,
     "declaration": false,
     "noFallthroughCasesInSwitch": true,
@@ -47,7 +47,8 @@
     },
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.pug"
   ],
   "exclude": [
     "tmp",

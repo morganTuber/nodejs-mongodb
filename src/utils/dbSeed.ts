@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv'
 import { readFileSync } from 'fs'
 import { connect } from 'mongoose'

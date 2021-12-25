@@ -18,15 +18,7 @@
 	"rules": {
 		"simple-import-sort/imports": "error",
 		"simple-import-sort/exports": "error",
-		"no-console": [
-			"warn",
-			{
-				"allow": [
-					"info",
-					"warn"
-				]
-			}
-		],
+		"no-console": "error",
 		"no-unused-vars": "off",
 		"@typescript-eslint/no-unused-vars": [
 			"error",
