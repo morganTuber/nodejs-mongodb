@@ -620,6 +620,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-dev-data
-.vscode
-.idea
+dev-*
+.*
