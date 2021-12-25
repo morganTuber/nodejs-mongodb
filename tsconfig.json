@@ -48,7 +48,6 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.pug"
   ],
   "exclude": [
     "tmp",
