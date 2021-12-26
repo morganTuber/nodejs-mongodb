@@ -24,6 +24,7 @@ interface StripeSession {
 }
 
 const stripe = new Stripe(getEnv('STRIPE_SECRET_KEY'), { apiVersion: '2020-08-27' })
+let event: Stripe.Event
 
 export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next) => {
 	// get currently booked tour
@@ -56,33 +57,31 @@ export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next)
 		data: { session },
 	})
 })
+const createStripeCheckout = async (session: StripeSession, next: NextFunction) => {
+	const { client_reference_id: tour, amount_total, customer_email } = session
+	const user = await UserModel.findOne({ email: customer_email })
+	if (!user) return next(new CustomError('User not found', HttpStatus.NOT_FOUND))
+	await bookingModel.create({
+		tour,
+		user: user._id,
+		price: amount_total / 100,
+	})
+}
 export const webhookCheckout = async (req: Request, res: Response, next: NextFunction) => {
+	const signature = req.headers['stripe-signature'] as string
 	try {
-		const signature = req.headers['stripe-signature'] as string
-		console.log(`The signature is ${signature}`)
-		const event = stripe.webhooks.constructEvent(
+		event = stripe.webhooks.constructEvent(
 			req.body,
 			signature,
 			getEnv('STRIPE_WEBHOOK_SECRET')
 		)
-		if (event.type === 'checkout.session.completed') {
-			const {
-				client_reference_id: tour,
-				amount_total,
-				customer_email,
-			} = event.data.object as StripeSession
-			const user = await UserModel.findOne({ email: customer_email })
-			if (!user) return next(new CustomError('User not found', HttpStatus.NOT_FOUND))
-			await bookingModel.create({
-				tour,
-				user: user._id,
-				price: amount_total / 100,
-			})
-		}
-		res.status(200).json({ received: true })
 	} catch (error) {
 		res.status(400).json(error)
 	}
+	if (event.type === 'checkout.session.completed') {
+		await createStripeCheckout(event.data.object as StripeSession, next)
+	}
+	res.status(200).json({ received: true })
 }
 export const createBooking = createDocument(bookingModel)
 export const getAllBookings = getAllDocuments(bookingModel)
