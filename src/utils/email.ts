@@ -19,7 +19,6 @@ export class Email {
 		this.firstName = user.name.split(' ')[0]
 	}
 	private createTransport() {
-		if (process.env.NODE_ENV === 'production') throw new Error('Not Implemented yet')
 		return createNodemailerTransport({
 			host: getEnv('EMAIL_HOST'),
 			port: +getEnv('EMAIL_PORT'),
