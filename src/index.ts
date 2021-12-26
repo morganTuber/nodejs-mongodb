@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import compression from 'compression'
 import cookieParser from 'cookie-parser'
+import cors from 'cors'
 import dotenv from 'dotenv'
 import express from 'express'
 import mongoSanitize from 'express-mongo-sanitize'
@@ -46,6 +47,8 @@ connect(DB_URL, { autoIndex: true }, error => {
 })
 
 //middlewares
+//implement CORS
+app.use(cors())
 //compression for performance gains
 app.use(compression())
 //middleware to set global security headers
