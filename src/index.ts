@@ -49,6 +49,7 @@ connect(DB_URL, { autoIndex: true }, error => {
 //middlewares
 //implement CORS
 app.use(cors())
+app.options('*', cors)
 //compression for performance gains
 app.use(compression())
 //middleware to set global security headers
