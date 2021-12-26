@@ -1,3 +1,4 @@
+import { NextFunction, Request, Response } from 'express'
 import Stripe from 'stripe'
 
 import {
@@ -20,7 +21,6 @@ interface StripeSession {
 	client_reference_id: string
 	customer_email: string
 	amount_total: number
-	display_items: [{ amount: number }]
 }
 
 const stripe = new Stripe(getEnv('STRIPE_SECRET_KEY'), { apiVersion: '2020-08-27' })
@@ -56,29 +56,33 @@ export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next)
 		data: { session },
 	})
 })
-export const webhookCheckout = catchAsync(async (req, res, next) => {
-	const signature = req.headers['stripe-signature'] as string
-	const event = stripe.webhooks.constructEvent(
-		req.body,
-		signature,
-		getEnv('STRIPE_WEBHOOK_SECRET')
-	)
-	if (event.type === 'checkout.session.completed') {
-		const {
-			client_reference_id: tour,
-			display_items,
-			customer_email,
-		} = event.data.object as StripeSession
-		const user = await UserModel.findOne({ email: customer_email })
-		if (!user) return next(new CustomError('User not found', HttpStatus.NOT_FOUND))
-		await bookingModel.create({
-			tour,
-			user: user._id,
-			price: display_items[0].amount / 100,
-		})
+export const webhookCheckout = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const signature = req.headers['stripe-signature'] as string
+		const event = stripe.webhooks.constructEvent(
+			req.body,
+			signature,
+			getEnv('STRIPE_WEBHOOK_SECRET')
+		)
+		if (event.type === 'checkout.session.completed') {
+			const {
+				client_reference_id: tour,
+				amount_total,
+				customer_email,
+			} = event.data.object as StripeSession
+			const user = await UserModel.findOne({ email: customer_email })
+			if (!user) return next(new CustomError('User not found', HttpStatus.NOT_FOUND))
+			await bookingModel.create({
+				tour,
+				user: user._id,
+				price: amount_total / 100,
+			})
+		}
+		res.status(200).json({ received: true })
+	} catch (error) {
+		res.status(400).json(error)
 	}
-	res.status(200).json({ received: true })
-})
+}
 export const createBooking = createDocument(bookingModel)
 export const getAllBookings = getAllDocuments(bookingModel)
 export const updateBooking = updateDocument(bookingModel)
