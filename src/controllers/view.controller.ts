@@ -6,9 +6,7 @@ import { catchAsync } from '~utils/catchAsync'
 import { CustomError } from '~utils/customError'
 
 interface OrderSuccessQuery {
-	tourId: string
-	userId: string
-	price: string
+	tour: string
 }
 
 export const getOverView = catchAsync(async (req, res, next) => {
@@ -63,12 +61,11 @@ export const resetPasswordForm = catchAsync(async (req, res, next) => {
 })
 export const orderSuccessPage = catchAsync(async (req, res, next) => {
 	//create a new booking once the user visits the success page
-	const { tourId, userId, price } = req.query as unknown as OrderSuccessQuery
-	if (!tourId && !userId && !price) return next()
-	await bookingModel.create({ tour: tourId, user: userId, price })
+	const { tour } = req.query as unknown as OrderSuccessQuery
+	if (!tour) return next()
 	res.render('success', {
 		title: 'Order Success',
-		tour: req.query.tour,
+		tour,
 	})
 })
 export const userBookingsPage = catchAsync(async (req: WithUserReq, res, next) => {

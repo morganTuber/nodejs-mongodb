@@ -12,6 +12,7 @@ import { connect } from 'mongoose'
 import morgan from 'morgan'
 import xssClean from 'xss-clean'
 
+import { webhookCheckout } from '~controllers/booking.controller'
 import { globalErrors } from '~middlewares/globalErrors'
 import { CustomError } from '~utils/customError'
 import { getEnv } from '~utils/getEnv'
@@ -46,6 +47,9 @@ connect(DB_URL, { autoIndex: true }, error => {
 	console.log('✔️ Successfully connected to the database')
 })
 
+//create a route for stripe webhook to post data
+// since the stripe function that we are about to use expect raw data in body we use it before bodyparser middleware
+app.use('/webhook-checkout', express.raw, webhookCheckout)
 //middlewares
 //implement CORS
 app.use(cors())
