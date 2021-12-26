@@ -24,6 +24,7 @@ import viewsRouter from './routes/view.routes'
 dotenv.config({ path: `${process.cwd()}/config.env` })
 
 const PORT = process.env.PORT || '4000'
+const URL = process.env.URL || `http://localhost:${PORT}`
 
 //db credentials
 const DB_URL = getEnv('DATABASE_URL').replace('<PASSWORD>', getEnv('DATABASE_PASSWORD'))
@@ -100,9 +101,7 @@ app.all('*', (req, _res, next) => {
 //global error handling middleware
 app.use(globalErrors)
 //start the server
-const server = app.listen(PORT, () =>
-	console.log(`🚀 Server started on http://localhost:${PORT}`)
-)
+const server = app.listen(PORT, () => console.log(`🚀 Server started on ${URL}`))
 process.on('unhandledRejection', (error: Record<string, string>) => {
 	if (error) {
 		console.log(`${error.name} - ${error.message}`)
