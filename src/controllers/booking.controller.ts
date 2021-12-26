@@ -20,6 +20,7 @@ interface StripeSession {
 	client_reference_id: string
 	customer_email: string
 	amount_total: number
+	display_items: [{ amount: number }]
 }
 
 const stripe = new Stripe(getEnv('STRIPE_SECRET_KEY'), { apiVersion: '2020-08-27' })
@@ -65,12 +66,16 @@ export const webhookCheckout = catchAsync(async (req, res, next) => {
 	if (event.type === 'checkout.session.completed') {
 		const {
 			client_reference_id: tour,
-			amount_total,
+			display_items,
 			customer_email,
 		} = event.data.object as StripeSession
 		const user = await UserModel.findOne({ email: customer_email })
 		if (!user) return next(new CustomError('User not found', HttpStatus.NOT_FOUND))
-		await bookingModel.create({ tour, user: user._id, price: amount_total / 100 })
+		await bookingModel.create({
+			tour,
+			user: user._id,
+			price: display_items[0].amount / 100,
+		})
 	}
 	res.status(200).json({ received: true })
 })
