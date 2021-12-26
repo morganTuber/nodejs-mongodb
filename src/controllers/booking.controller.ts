@@ -1,6 +1,11 @@
 import Stripe from 'stripe'
 
-import { createDocument, deleteDocument, getAllDocuments, updateDocument } from '~controllers/factory.handler'
+import {
+	createDocument,
+	deleteDocument,
+	getAllDocuments,
+	updateDocument,
+} from '~controllers/factory.handler'
 import { bookingModel } from '~models/booking.model'
 import { TourModel } from '~models/tour.model'
 import { HttpStatus } from '~typings/http-status.enum'
@@ -31,7 +36,9 @@ export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next)
 				currency: 'usd',
 				amount: tour.price * 100,
 				quantity: 1,
-				images: [`https://www.natours.dev/img/tours/${tour.imageCover}`],
+				images: [
+					`https://morning-ridge-48586.herokuapp.com/img/tours/${tour.imageCover}`,
+				],
 			},
 		],
 	})
