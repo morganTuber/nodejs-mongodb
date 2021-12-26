@@ -23,8 +23,9 @@ interface StripeSession {
 	amount_total: number
 }
 
+const stripe = new Stripe(getEnv('STRIPE_SECRET_KEY'), { apiVersion: '2020-08-27' })
+
 export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next) => {
-	const stripe = new Stripe(getEnv('STRIPE_SECRET_KEY'), { apiVersion: '2020-08-27' })
 	// get currently booked tour
 	const tour = await TourModel.findById(req.params.tourId)
 	if (!tour) {
@@ -56,7 +57,6 @@ export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next)
 	})
 })
 export const webhookCheckout = async (req: Request, res: Response, next: NextFunction) => {
-	const stripe = new Stripe(getEnv('STRIPE_SECRET_KEY'), { apiVersion: '2020-08-27' })
 	try {
 		const signature = req.headers['stripe-signature'] as string
 		const event = stripe.webhooks.constructEvent(
