@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import compression from 'compression'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 import express from 'express'
@@ -45,6 +46,8 @@ connect(DB_URL, { autoIndex: true }, error => {
 })
 
 //middlewares
+//compression for performance gains
+app.use(compression())
 //middleware to set global security headers
 app.use(helmet())
 //only enable logging when in development
