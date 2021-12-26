@@ -108,9 +108,17 @@ app.all('*', (req, _res, next) => {
 app.use(globalErrors)
 //start the server
 const server = app.listen(PORT, () => console.log(`🚀 Server started on ${URL}`))
+
 process.on('unhandledRejection', (error: Record<string, string>) => {
 	if (error) {
 		console.log(`${error.name} - ${error.message}`)
 		server.close(() => process.exit(1))
 	}
+})
+//close down the server when it recives sigterm signal from heroku
+process.on('SIGTERM', () => {
+	console.log('👋 SIGTERM received. Shutting down the server')
+	server.close(() => {
+		console.log('💥 Process terminated')
+	})
 })
