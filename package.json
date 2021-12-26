@@ -66,7 +66,7 @@
 		"clean-db": "yarn tsnode src/utils/dbSeed.ts --clean",
 		"seed-db": "yarn tsnode src/utils/dbSeed.ts --seed",
 		"dev": "ts-node-dev --respawn -r tsconfig-paths/register src/index.ts",
-		"start": "NODE_ENV=production node build/index.js",
+		"start": "node build/index.js",
 		"build": "rimraf build && tsc && tsc-alias && cp -r src/views build",
 		"build:js": "esbuild dev-data/ts/index.ts --platform=browser --watch --bundle --minify --outfile=public/js/bundle.js"
 	}
