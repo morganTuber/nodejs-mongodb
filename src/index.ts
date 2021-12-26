@@ -24,7 +24,10 @@ import viewsRouter from './routes/view.routes'
 dotenv.config({ path: `${process.cwd()}/config.env` })
 
 const PORT = process.env.PORT || '4000'
-const URL = process.env.URL || `http://localhost:${PORT}`
+const URL =
+	process.env.NODE_ENV === 'production'
+		? `https://morning-ridge-48586.herokuapp.com`
+		: `http://localhost:${PORT}`
 
 //db credentials
 const DB_URL = getEnv('DATABASE_URL').replace('<PASSWORD>', getEnv('DATABASE_PASSWORD'))
