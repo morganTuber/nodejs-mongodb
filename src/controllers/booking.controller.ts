@@ -59,6 +59,7 @@ export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next)
 export const webhookCheckout = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const signature = req.headers['stripe-signature'] as string
+		console.log(`The signature is ${signature}`)
 		const event = stripe.webhooks.constructEvent(
 			req.body,
 			signature,

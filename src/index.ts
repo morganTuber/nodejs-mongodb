@@ -49,7 +49,7 @@ connect(DB_URL, { autoIndex: true }, error => {
 
 //create a route for stripe webhook to post data
 // since the stripe function that we are about to use expect raw data in body we use it before bodyparser middleware
-app.post('/api/webhook-checkout', express.raw({ type: 'application/json' }), webhookCheckout)
+app.post('/api/webhook-checkout', express.raw({ type: '*/*' }), webhookCheckout)
 //middlewares
 //implement CORS
 app.use(cors())
