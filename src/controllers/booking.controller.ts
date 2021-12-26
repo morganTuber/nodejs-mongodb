@@ -24,7 +24,6 @@ interface StripeSession {
 }
 
 const stripe = new Stripe(getEnv('STRIPE_SECRET_KEY'), { apiVersion: '2020-08-27' })
-let event: Stripe.Event
 
 export const getCheckoutSession = catchAsync(async (req: WithUserReq, res, next) => {
 	// get currently booked tour
@@ -68,20 +67,20 @@ const createStripeCheckout = async (session: StripeSession, next: NextFunction) 
 	})
 }
 export const webhookCheckout = async (req: Request, res: Response, next: NextFunction) => {
-	const signature = req.headers['stripe-signature'] as string
 	try {
-		event = stripe.webhooks.constructEvent(
+		const signature = req.headers['stripe-signature'] as string
+		const event = stripe.webhooks.constructEvent(
 			req.body,
 			signature,
 			getEnv('STRIPE_WEBHOOK_SECRET')
 		)
+		if (event.type === 'checkout.session.completed') {
+			await createStripeCheckout(event.data.object as StripeSession, next)
+		}
+		res.status(200).json({ received: true })
 	} catch (error) {
 		res.status(400).json(error)
 	}
-	if (event.type === 'checkout.session.completed') {
-		await createStripeCheckout(event.data.object as StripeSession, next)
-	}
-	res.status(200).json({ received: true })
 }
 export const createBooking = createDocument(bookingModel)
 export const getAllBookings = getAllDocuments(bookingModel)
